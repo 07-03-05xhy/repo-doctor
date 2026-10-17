@@ -27,6 +27,7 @@ python scripts/deps_check.py {target} --inventory tmp/inventory.json --out tmp/d
 
 - 按 severity 扣分：high 每条 5 分、medium 每条 3 分、low 每条 1 分。
 - 本项上限 15 分，扣完为止，不出现负分。
+- 当源文件数超过 50 时，扣分按 _index.md 的规模归一化规则折算。
 
 ## 建议模板
 

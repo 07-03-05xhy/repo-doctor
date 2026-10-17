@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 步骤 1：单元测试（纯标准库 unittest，无第三方依赖）
+      - name: 单元测试
+        run: python -m unittest discover -s scripts/tests -v
+
+      # 步骤 2：冒烟自扫描——对 examples/bad-project 依次跑五个脚本，全部要求 exit 0
+      - name: 冒烟自扫描（examples/bad-project）
+        run: |
+          set -e
+          OUT="${{ runner.temp }}/repo-doctor-smoke"
+          mkdir -p "$OUT"
+          python scripts/inventory.py examples/bad-project --out "$OUT/inventory.json"
+          python scripts/todo_scan.py examples/bad-project --inventory "$OUT/inventory.json" --out "$OUT/todo.json"
+          python scripts/complexity.py examples/bad-project --inventory "$OUT/inventory.json" --out "$OUT/complexity.json"
+          python scripts/test_map.py examples/bad-project --inventory "$OUT/inventory.json" --out "$OUT/test_map.json"
+          python scripts/deps_check.py examples/bad-project --inventory "$OUT/inventory.json" --offline --out "$OUT/deps.json"

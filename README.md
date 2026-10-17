@@ -2,7 +2,7 @@
 
 ## 这是什么
 
-一个 AI 工作区规范包，不是 CLI 程序。把整个文件夹作为 AI 工作区打开，AI 读取 WORKSPACE.md 后会按规范扫描目标仓库并产出健康检查报告。脚本只做确定性计算（清单统计、规则命中、扣分汇总、报告渲染），评分只能来自 scripts/score.py，禁止 AI 手算。
+一个 AI 工作区规范包，不是 CLI 程序。把整个文件夹作为 AI 工作区打开，AI 读取 WORKSPACE.md 后会按规范扫描目标仓库并产出健康检查报告。脚本只做确定性计算（清单统计、规则命中、扣分汇总、报告渲染），评分只能来自 scripts/score.py，禁止 AI 手算。评分支持规模归一化：源文件数超过 50 时按问题密度折算扣分，避免大项目仅因体量被过度扣分。
 
 ## 目录结构
 
@@ -15,7 +15,7 @@ repo-doctor-workspace/
 ├─ scripts/          # 确定性脚本（7 个）：
 │  ├─ inventory.py    # 生成文件清单，是所有路径的唯一来源
 │  ├─ todo_scan.py    # TODO/FIXME 等遗留标记扫描
-│  ├─ complexity.py   # 函数复杂度统计（行数与分支数）
+│  ├─ complexity.py   # 函数复杂度统计（Python 用 AST，JS/TS 用启发式；行数与分支数）
 │  ├─ test_map.py     # 测试缺失检测（源文件与测试文件名映射）
 │  ├─ deps_check.py   # 依赖过期检查（支持 --offline）
 │  ├─ score.py        # 汇总扣分并输出评分与等级

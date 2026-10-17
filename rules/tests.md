@@ -27,6 +27,7 @@ python scripts/test_map.py {target} --inventory tmp/inventory.json --out tmp/tes
 
 - 每条缺失（一个无测试的源文件）按 medium 扣 3 分。
 - 本项上限 30 分，扣完为止，不出现负分。
+- 当源文件数超过 50 时，扣分按 _index.md 的规模归一化规则折算。
 
 ## 建议模板
 

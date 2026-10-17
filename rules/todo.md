@@ -30,6 +30,7 @@ python scripts/todo_scan.py {target} --inventory tmp/inventory.json --out tmp/to
 
 - 每条 issue 扣 3 分（score.py 对无 severity 的 issue 按 medium 档扣分）。
 - 本项上限 15 分，扣完为止，不出现负分。
+- 当源文件数超过 50 时，扣分按 _index.md 的规模归一化规则折算。
 
 ## 建议模板
 

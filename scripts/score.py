@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """读取 result.json，按固定权重与严重度扣分规则计算总分和等级，补充 score/grade 后输出。
+源文件数超过 SCALE_REFERENCE 时按规模比例缩减扣分（小项目口径不变）。
 只做确定性计分，不读取除输入 result.json 之外的任何文件，不修改任何文件。"""
 import argparse
 import json
 import sys
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 # 各规则的初始权重分
@@ -12,6 +14,8 @@ RULE_WEIGHTS = {"todo": 15, "complexity": 25, "tests": 30, "deps": 15, "large_fi
 SEVERITY_DEDUCTION = {"high": 5, "medium": 3, "low": 1}
 # 等级阈值（下限闭区间）：90+→A、80-89→B、70-79→C、60-69→D、<60→F（不出现 E）
 GRADE_THRESHOLDS = [(90, "A"), (80, "B"), (70, "C"), (60, "D"), (0, "F")]
+# 规模归一化基准：源文件数不超过该值时按原口径扣分（factor=1）
+SCALE_REFERENCE = 50
 
 
 def grade_of(total: int) -> str:
@@ -46,8 +50,16 @@ def main() -> None:
         print("错误：结果文件中的 issues 必须是数组", file=sys.stderr)
         sys.exit(1)
 
-    # 每个规则从满分（权重）开始，按 issue 严重度扣分
-    rule_scores = dict(RULE_WEIGHTS)
+    # 源文件数 N 用于规模归一化；缺失或非法时按 N=1 处理并提示
+    inventory = result.get("inventory")
+    source_files = inventory.get("source_files") if isinstance(inventory, dict) else None
+    if not isinstance(source_files, int) or isinstance(source_files, bool) or source_files < 0:
+        print("提示：result.json 缺少有效的 inventory.source_files，按源文件数 N=1 处理", file=sys.stderr)
+        source_files = 1
+    factor = min(1.0, SCALE_REFERENCE / max(1, source_files))
+
+    # 每个规则按 issue 严重度累计扣分（乘以规模系数，未知规则忽略、severity 缺失按 medium）
+    rule_deductions = {rule: 0.0 for rule in RULE_WEIGHTS}
     for issue in issues:
         if not isinstance(issue, dict):
             continue
@@ -56,7 +68,14 @@ def main() -> None:
             continue  # 未知规则一律忽略
         severity = issue.get("severity", "medium")  # 缺失时按 medium 计
         deduction = SEVERITY_DEDUCTION.get(severity, SEVERITY_DEDUCTION["medium"])
-        rule_scores[rule] = max(0, rule_scores[rule] - deduction)  # 每项最低 0 分
+        rule_deductions[rule] += deduction * factor
+
+    # 每规则扣分合计后四舍五入取整（round half up），得分 = 权重 - 扣分，最低 0
+    rule_scores = {}
+    for rule, weight in RULE_WEIGHTS.items():
+        rounded = int(Decimal(str(rule_deductions[rule])).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP))
+        rule_scores[rule] = max(0, weight - rounded)
 
     total = sum(rule_scores.values())
     # 在原 dict 上补充/覆盖 score 和 grade，其余字段原样保留
