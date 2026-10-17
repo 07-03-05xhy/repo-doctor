@@ -1,0 +1,12 @@
+# Python 缓存与虚拟环境
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 扫描中间产物
+tmp/
+
+# 扫描产物不入库，保留目录占位
+reports/*
+!reports/.gitkeep

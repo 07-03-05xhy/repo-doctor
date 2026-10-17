@@ -1,0 +1,61 @@
+# {{ project }} 健康检查报告
+
+扫描时间：{{ scanned_at }} ｜ 评分：{{ score }}/100 ｜ 等级：{{ grade }}
+
+## 评分构成
+
+| 规则 | 得分 | 满分 | 问题数 |
+|---|---|---|---|
+{% for row in rule_rows -%}
+| {{ row.rule }} | {{ row.earned }} | {{ row.weight }} | {{ row.issue_count }} |
+{% endfor %}
+
+## 问题分布
+
+- high：{{ severity_counts.high }}
+- medium：{{ severity_counts.medium }}
+- low：{{ severity_counts.low }}
+- 未标注：{{ severity_counts.unmarked }}
+
+## Top 3 建议
+
+{% if top_suggestions -%}
+{% for item in top_suggestions -%}
+{{ loop.index }}. {{ item }}
+{% endfor %}
+{%- else -%}
+（无建议）
+{%- endif %}
+
+## 问题明细
+
+{% for group in issues_by_rule -%}
+### {{ group.rule }}
+{% for issue in group.issues -%}
+- {% if issue.line is not none %}{{ issue.file }}:{{ issue.line }}{% else %}{{ issue.file }}{% endif %}　{{ issue.message }}{% if issue.suggestion %} —— 建议：{{ issue.suggestion }}{% endif %}
+{% endfor %}
+{% endfor %}
+
+## 扫描配置与跳过规则
+
+- 目标目录：{{ target }}
+- 文件总数：{{ inventory.files }}
+- 源码文件数：{{ inventory.source_files }}
+- 生成工具：{{ generated_by }}
+
+{% if skipped_rules -%}
+{% for item in skipped_rules -%}
+- {{ item.rule }}：{{ item.reason }}
+{% endfor %}
+{%- else -%}
+（无跳过的规则）
+{%- endif %}
+
+## 修复提示词
+
+把下面这段提示词原样发给 AI，它会按编号逐条修复上述问题：
+
+```text
+{{ fix_prompt }}
+```
+
